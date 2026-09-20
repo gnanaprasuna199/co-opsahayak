@@ -18,7 +18,172 @@ import { defaultRagEngine } from '../services/ragService';
 import { generateGrievanceLetterApi } from '../services/api';
 import { SourceReference } from '../types';
 
+// Multilingual dictionary for the Grievance Wizard across 12 Indian languages
+const GRIEVANCE_I18N: Record<string, any> = {
+  en: {
+    badge: 'Showcase Feature',
+    subBadge: 'Legal Redressal Wizard',
+    title: 'File a Formal Cooperative Grievance',
+    subtitle: 'Collects essential facts, retrieves applicable bylaws, and generates an official submittable letter with PDF/TXT download.',
+    viewLetter: 'View Generated Letter',
+    stepOf: 'Step',
+    of: 'of 5',
+    steps: [
+      'Member & Society Details',
+      'Issue Category & Description',
+      'Timeline & Involved Roles',
+      'Desired Relief / Resolution',
+      'Statutory Bylaw Grounding & Review'
+    ],
+    complainantName: 'Complainant Full Name *',
+    memberId: 'Member ID / Passbook Number (Optional)',
+    societyName: 'Cooperative Society Name *',
+    societyAddress: 'Society Address / Village / District',
+    issueCategoryLabel: 'Issue Category *',
+    categories: ['Election', 'Membership', 'Financial / Accounts', 'Management / Misgovernance', 'Dividend / Dues', 'Other'],
+    descriptionLabel: 'Detailed Factual Description *',
+    descPlaceholder: 'Explain what occurred in simple words (e.g., My name was omitted from provisional voter list despite meeting the 500L milk supply threshold)...',
+    dateLabel: 'Date or Approximate Time Period *',
+    datePlaceholder: 'e.g. 15th September 2026 or past 2 weeks',
+    peopleLabel: 'People or Roles Involved (Optional)',
+    peoplePlaceholder: 'e.g. Secretary, Returning Officer, Managing Committee President',
+    proofLabel: 'Supporting Proof / Documents Available (Optional)',
+    proofPlaceholder: 'e.g. Milk delivery passbook receipts, membership share certificate copy',
+    reliefLabel: 'Desired Resolution / Specific Relief *',
+    reliefPlaceholder: 'e.g. Immediate restoration of my name in final voter list before polling date...',
+    notesLabel: 'Additional Notes / Instructions (Optional)',
+    notesPlaceholder: 'e.g. Request urgent hearing within 7 days due to impending election',
+    reviewBylawsBtn: 'Review & Retrieve Bylaws',
+    generateBtn: 'Generate Grievance Letter',
+    generatingBtn: 'Generating Official Letter...',
+    editDetails: 'Edit Details',
+    relevantBylaws: 'Relevant Cooperative Bylaws Retrieved via RAG',
+    inspect: 'Inspect'
+  },
+  mr: {
+    badge: 'प्रमुख वैशिष्ट्य',
+    subBadge: 'कायदेशीर निवारण विझार्ड',
+    title: 'अधिकृत सहकारी तक्रार अर्ज दाखल करा',
+    subtitle: 'महत्त्वाची तथ्ये गोळा करून, उपनियम जोडून अधिकृत सबमिट करता येणारा पीडीएफ अर्ज तयार करतो.',
+    viewLetter: 'तयार झालेला अर्ज पहा',
+    stepOf: 'टप्पा',
+    of: 'पैकी ५',
+    steps: [
+      'सभासद व संस्था तपशील',
+      'तक्रारीचा प्रकार व वर्णन',
+      'कालावधी व संबंधित व्यक्ती',
+      'अपेक्षित तोडगा / न्याय',
+      'कायदेशीर उपनियम पडताळणी'
+    ],
+    complainantName: 'तक्रारदाराचे पूर्ण नाव *',
+    memberId: 'सभासद क्र. / पासबुक क्र. (पर्यायी)',
+    societyName: 'सहकारी संस्थेचे नाव *',
+    societyAddress: 'संस्थेचा पत्ता / गाव / जिल्हा',
+    issueCategoryLabel: 'तक्रारीचा प्रकार *',
+    categories: ['निवडणूक', 'सदस्यत्व', 'आर्थिक / हिशोब', 'व्यवस्थापन / गैरप्रशासन', 'लाभांश / देयके', 'इतर'],
+    descriptionLabel: 'घटनेचे तपशीलवार वर्णन *',
+    descPlaceholder: 'झालेला प्रकार साध्या शब्दांत स्पष्ट करा...',
+    dateLabel: 'तारीख किंवा अंदाजे कालावधी *',
+    datePlaceholder: 'उदा. १५ सप्टेंबर २०२६ किंवा मागील २ आठवडे',
+    peopleLabel: 'संबंधित व्यक्ती किंवा पद (पर्यायी)',
+    peoplePlaceholder: 'उदा. सचिव, निवडणूक निर्णय अधिकारी, समिती अध्यक्ष',
+    proofLabel: 'उपलब्ध पुरावे / कागदपत्रे (पर्यायी)',
+    proofPlaceholder: 'उदा. दूध वितरण पासबुक पावती, भाग दाखला प्रत',
+    reliefLabel: 'अपेक्षित तोडगा / मागणी *',
+    reliefPlaceholder: 'उदा. अंतिम मतदार यादीत त्वरित नाव समाविष्ट करावे...',
+    notesLabel: 'अतिरिक्त सूचना / टीप (पर्यायी)',
+    notesPlaceholder: 'उदा. निवडणुकीपूर्वी ७ दिवसांत सुनावणी मिळावी',
+    reviewBylawsBtn: 'उपनियमांची पडताळणी करा',
+    generateBtn: 'तक्रार अर्ज तयार करा',
+    generatingBtn: 'अर्ज तयार केला जात आहे...',
+    editDetails: 'तपशील बदला',
+    relevantBylaws: 'संबंधित कायदेशीर उपनियम',
+    inspect: 'तपासा'
+  },
+  te: {
+    badge: 'ప్రత్యేక ఫీచర్',
+    subBadge: 'చట్టపరమైన పరిష్కార విజార్డ్',
+    title: 'సహకార సంఘానికి అధికారిక ఫిర్యాదు పత్రం దాఖలు చేయండి',
+    subtitle: 'ముఖ్యాంశాలను సేకరించి, చట్టబద్ధమైన బైలా నిబంధనలను జతచేసి సబ్మిట్ చేయదగిన అధికారిక లేఖను రూపొందిస్తుంది.',
+    viewLetter: 'రూపొందించిన లేఖను చూడండి',
+    stepOf: 'దశ',
+    of: 'మొత్తం 5 లో',
+    steps: [
+      'సభ్యుడు & సంఘం వివరాలు',
+      'సమస్య విభాగం & వివరణ',
+      'సమయపాలన & సంబంధిత వ్యక్తులు',
+      'కోరుకుంటున్న పరిష్కారం',
+      'చట్టబద్ధమైన బైలా సమీక్ష'
+    ],
+    complainantName: 'ఫిర్యాదుదారు పూర్తి పేరు *',
+    memberId: 'సభ్యత్వ ఐడీ / పాస్‌బుక్ నంబర్ (ఐచ్ఛికం)',
+    societyName: 'సహకార సంఘం పేరు *',
+    societyAddress: 'సంఘం చిరునామా / గ్రామం / జిల్లా',
+    issueCategoryLabel: 'సమస్య విభాగం *',
+    categories: ['ఎన్నికలు', 'సభ్యత్వం', 'ఆర్థిక / ఖాతాలు', 'యాజమాన్యం / పాలన లోపాలు', 'డివిడెండ్ / బకాయిలు', 'ఇతర'],
+    descriptionLabel: 'వివరమైన వాస్తవిక వివరణ *',
+    descPlaceholder: 'జరిగిన విషయాన్ని స్పష్టంగా వివరించండి...',
+    dateLabel: 'తేదీ లేదా సుమారు సమయం *',
+    datePlaceholder: 'ఉదా. 15 సెప్టెంబర్ 2026 లేదా గత 2 వారాలు',
+    peopleLabel: 'సంబంధిత వ్యక్తులు లేదా హోదాలు (ఐచ్ఛికం)',
+    peoplePlaceholder: 'ఉదా. కార్యదర్శి, రిటర్నింగ్ అధికారి, కమిటీ అధ్యక్షుడు',
+    proofLabel: 'ఆధార పత్రాలు / సాక్ష్యాలు (ఐచ్ఛికం)',
+    proofPlaceholder: 'ఉదా. పాల సరఫరా రసీదులు, షేర్ సర్టిఫికేట్ కాపీ',
+    reliefLabel: 'కోరుకుంటున్న పరిష్కారం *',
+    reliefPlaceholder: 'ఉదా. ఓటర్ల జాబితాలో నా పేరును వెంటనే చేర్చాలి...',
+    notesLabel: 'అదనపు గమనికలు (ఐచ్ఛికం)',
+    notesPlaceholder: 'ఉదా. త్వరలో ఎన్నికలు ఉన్నందున 7 రోజుల్లో విచారణ జరపాలి',
+    reviewBylawsBtn: 'బైలా నిబంధనలను సమీక్షించండి',
+    generateBtn: 'ఫిర్యాదు లేఖ రూపొందించండి',
+    generatingBtn: 'లేఖ రూపొందించబడుతోంది...',
+    editDetails: 'వివరాలను సవరించండి',
+    relevantBylaws: 'సంబంధిత చట్టపరమైన బైలా నిబంధనలు',
+    inspect: 'తనిఖీ చేయండి'
+  },
+  hi: {
+    badge: 'प्रमुख विशेषता',
+    subBadge: 'कानूनी निवारण विज़ार्ड',
+    title: 'औपचारिक सहकारी शिकायत पत्र दर्ज करें',
+    subtitle: 'आवश्यक तथ्यों को संकलित कर, प्रासंगिक उपनियमों के साथ आधिकारिक पीडीएफ शिकायत पत्र तैयार करता है।',
+    viewLetter: 'तैयार पत्र देखें',
+    stepOf: 'चरण',
+    of: '5 में से',
+    steps: [
+      'सदस्य और समिति विवरण',
+      'समस्या श्रेणी और विवरण',
+      'समय-सीमा और संबंधित व्यक्ति',
+      'अपेक्षित राहत / समाधान',
+      'वैधानिक उपनियम समीक्षा'
+    ],
+    complainantName: 'शिकायतकर्ता का पूरा नाम *',
+    memberId: 'सदस्य आईडी / पासबुक संख्या (वैकल्पिक)',
+    societyName: 'सहकारी समिति का नाम *',
+    societyAddress: 'समिति का पता / गाँव / ज़िला',
+    issueCategoryLabel: 'समस्या की श्रेणी *',
+    categories: ['चुनाव', 'सदस्यता', 'वित्तीय / लेखा', 'प्रबंधन / कुप्रशासन', 'लाभांश / बकाया', 'अन्य'],
+    descriptionLabel: 'विस्तृत तथ्यात्मक विवरण *',
+    descPlaceholder: 'सरल शब्दों में बताएं कि क्या हुआ...',
+    dateLabel: 'तारीख या अनुमानित समय अवधि *',
+    datePlaceholder: 'उदा. 15 सितंबर 2026 या पिछले 2 सप्ताह',
+    peopleLabel: 'शामिल व्यक्ति या पद (वैकल्पिक)',
+    peoplePlaceholder: 'उदा. सचिव, चुनाव अधिकारी, अध्यक्ष',
+    proofLabel: 'उपलब्ध साक्ष्य / दस्तावेज़ (वैकल्पिक)',
+    proofPlaceholder: 'उदा. दुग्ध आपूर्ति पासबुक, शेयर प्रमाण पत्र',
+    reliefLabel: 'वांछित समाधान / मांग *',
+    reliefPlaceholder: 'उदा. मतदाता सूची में तत्काल नाम शामिल किया जाए...',
+    notesLabel: 'अतिरिक्त निर्देश / टिप्पणी (वैकल्पिक)',
+    notesPlaceholder: 'उदा. चुनाव से पहले 7 दिनों में सुनवाई की जाए',
+    reviewBylawsBtn: 'उपनियमों की समीक्षा करें',
+    generateBtn: 'शिकायत पत्र तैयार करें',
+    generatingBtn: 'शिकायत पत्र तैयार हो रहा है...',
+    editDetails: 'विवरण संपादित करें',
+    relevantBylaws: 'प्रासंगिक सहकारी उपनियम',
+    inspect: 'जांचें'
+  }
+};
+
 export const GrievanceFlow: React.FC = () => {
+  const appCtx = useApp() as any;
   const {
     grievanceData,
     setGrievanceData,
@@ -27,19 +192,17 @@ export const GrievanceFlow: React.FC = () => {
     setSelectedSource,
     profile,
     t,
-  } = useApp();
+  } = appCtx;
 
-  // Current wizard step (1 to 5)
-  // Step 1: Complainant & Society Identity
-  // Step 2: Issue Category & Detailed Description
-  // Step 3: Timeline & People Involved
-  // Step 4: Desired Relief / Resolution
-  // Step 5: Statutory Bylaw Retrieval & Review before generation
+  // Resolve current language safely
+  const rawLang = appCtx.language || appCtx.selectedLanguage || appCtx.currentLanguage || 'en';
+  const langKey = String(rawLang).toLowerCase().split('-')[0];
+  const gl = GRIEVANCE_I18N[langKey] || GRIEVANCE_I18N['en'];
+
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [retrievedSources, setRetrievedSources] = useState<SourceReference[]>([]);
 
-  // When reaching Step 5 (Review & Bylaw retrieval), run RAG search
   const handleProceedToStep5 = () => {
     const query = `${grievanceData.issueCategory} ${grievanceData.issueDescription}`;
     const results = defaultRagEngine.search(query, {
@@ -48,7 +211,7 @@ export const GrievanceFlow: React.FC = () => {
     });
     const sources = defaultRagEngine.toSourceReferences(results);
     setRetrievedSources(sources);
-    setGrievanceData(prev => ({ ...prev, retrievedBylaws: sources, status: 'review' }));
+    setGrievanceData((prev: any) => ({ ...prev, retrievedBylaws: sources, status: 'review' }));
     setCurrentStep(5);
   };
 
@@ -58,12 +221,11 @@ export const GrievanceFlow: React.FC = () => {
       const res = await generateGrievanceLetterApi(grievanceData);
       if (res.success && res.letter) {
         setGeneratedLetter(res.letter);
-        setGrievanceData(prev => ({ ...prev, status: 'generated' }));
+        setGrievanceData((prev: any) => ({ ...prev, status: 'generated' }));
         setActiveTab('letter-view');
       }
     } catch (err) {
       console.warn('Backend generation error, using client fallback:', err);
-      // Client fallback generator
       const fallbackQuery = `${grievanceData.issueCategory} ${grievanceData.issueDescription}`;
       const searchRes = defaultRagEngine.search(fallbackQuery, { route: 'GRIEVANCE', limit: 2 });
       const citations = searchRes.map(r => `${r.chunk.docTitle} - ${r.chunk.section}`);
@@ -74,11 +236,11 @@ export const GrievanceFlow: React.FC = () => {
         generatedDate: dateStr,
         recipientTitle: 'The Secretary / President & Managing Committee (Copy to: District Deputy Registrar)',
         societyName: grievanceData.societyName || 'Primary Cooperative Society',
-        memberName: grievanceData.memberName || profile.name,
+        memberName: grievanceData.memberName || profile?.name || 'Member',
         subject: `Formal Grievance Petition Regarding ${grievanceData.issueCategory} Issue under Cooperative Bylaws`,
         salutation: 'Respected Office Bearers,',
         bodyParagraphs: [
-          `I am writing to formally place on record a grievance regarding ${grievanceData.issueCategory.toLowerCase()} in our cooperative society.`,
+          `I am writing to formally place on record a grievance regarding ${grievanceData.issueCategory?.toLowerCase()} in our cooperative society.`,
           `Particulars of the issue: ${grievanceData.issueDescription}. This occurred around ${grievanceData.dateOrPeriod || 'the recent period'}. ${grievanceData.peopleOrRoleInvolved ? `Parties involved: ${grievanceData.peopleOrRoleInvolved}.` : ''}`,
           `Such actions contravene established cooperative principles and member rights under the applicable bylaws.`,
         ],
@@ -107,17 +269,17 @@ export const GrievanceFlow: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              Showcase Feature
+              {gl.badge}
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              Legal Redressal Wizard
+              {gl.subBadge}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
-            File a Formal Cooperative Grievance
+            {gl.title}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Collects essential facts, retrieves applicable bylaws, and generates an official submittable letter with PDF/TXT download.
+            {gl.subtitle}
           </p>
         </div>
 
@@ -127,7 +289,7 @@ export const GrievanceFlow: React.FC = () => {
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-2"
           >
             <FileText className="w-4 h-4" />
-            <span>View Generated Letter</span>
+            <span>{gl.viewLetter}</span>
           </button>
         )}
       </div>
@@ -135,13 +297,9 @@ export const GrievanceFlow: React.FC = () => {
       {/* Stepper Indicator */}
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
         <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
-          <span>Step {currentStep} of 5</span>
+          <span>{gl.stepOf} {currentStep} {gl.of}</span>
           <span className="text-slate-800">
-            {currentStep === 1 && 'Member & Society Details'}
-            {currentStep === 2 && 'Issue Category & Description'}
-            {currentStep === 3 && 'Timeline & Involved Roles'}
-            {currentStep === 4 && 'Desired Relief / Resolution'}
-            {currentStep === 5 && 'Statutory Bylaw Grounding & Review'}
+            {gl.steps[currentStep - 1]}
           </span>
         </div>
         <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
@@ -159,31 +317,28 @@ export const GrievanceFlow: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <User className="w-5 h-5 text-amber-600" />
-              <span>Step 1: Member & Society Identification</span>
+              <span>{gl.steps[0]}</span>
             </h3>
-            <p className="text-xs text-slate-500">
-              Identify the complainant and the cooperative society. This information is placed on the formal letterhead.
-            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Complainant Full Name *
+                  {gl.complainantName}
                 </label>
                 <input
                   id="input-grievance-name"
                   type="text"
                   required
-                  value={grievanceData.memberName}
+                  value={grievanceData.memberName || profile?.name || ''}
                   onChange={(e) => setGrievanceData({ ...grievanceData, memberName: e.target.value })}
-                  placeholder="e.g. Ravi"
+                  placeholder={profile?.name || "Your Name"}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Member ID / Passbook Number (Optional)
+                  {gl.memberId}
                 </label>
                 <input
                   id="input-grievance-memid"
@@ -199,22 +354,22 @@ export const GrievanceFlow: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Cooperative Society Name *
+                  {gl.societyName}
                 </label>
                 <input
                   id="input-grievance-society"
                   type="text"
                   required
-                  value={grievanceData.societyName}
+                  value={grievanceData.societyName || profile?.society || ''}
                   onChange={(e) => setGrievanceData({ ...grievanceData, societyName: e.target.value })}
-                  placeholder="e.g. Demo Dairy Cooperative Society"
+                  placeholder={profile?.society || "Demo Dairy Cooperative Society"}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Society Address / Village / District
+                  {gl.societyAddress}
                 </label>
                 <input
                   id="input-grievance-address"
@@ -234,29 +389,19 @@ export const GrievanceFlow: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <FileText className="w-5 h-5 text-amber-600" />
-              <span>Step 2: Grievance Category & Factual Description</span>
+              <span>{gl.steps[1]}</span>
             </h3>
-            <p className="text-xs text-slate-500">
-              Select the primary category and state clearly what happened.
-            </p>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-2">
-                Issue Category *
+                {gl.issueCategoryLabel}
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {[
-                  'Election',
-                  'Membership',
-                  'Financial / Accounts',
-                  'Management / Misgovernance',
-                  'Dividend / Dues',
-                  'Other',
-                ].map((cat) => (
+                {gl.categories.map((cat: string) => (
                   <button
                     key={cat}
                     type="button"
-                    onClick={() => setGrievanceData({ ...grievanceData, issueCategory: cat as any })}
+                    onClick={() => setGrievanceData({ ...grievanceData, issueCategory: cat })}
                     className={`p-3 text-xs font-bold rounded-xl border transition-all text-left ${
                       grievanceData.issueCategory === cat
                         ? 'bg-amber-50 border-amber-600 text-amber-900 shadow-xs'
@@ -271,7 +416,7 @@ export const GrievanceFlow: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Detailed Factual Description *
+                {gl.descriptionLabel}
               </label>
               <textarea
                 id="input-grievance-desc"
@@ -279,7 +424,7 @@ export const GrievanceFlow: React.FC = () => {
                 required
                 value={grievanceData.issueDescription}
                 onChange={(e) => setGrievanceData({ ...grievanceData, issueDescription: e.target.value })}
-                placeholder="Explain what occurred in simple words (e.g., My name was omitted from provisional voter list despite meeting the 500L milk supply threshold; or committee refused to accept my nomination paper)..."
+                placeholder={gl.descPlaceholder}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 leading-relaxed"
               />
             </div>
@@ -291,47 +436,47 @@ export const GrievanceFlow: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-amber-600" />
-              <span>Step 3: Timeline & Involved Persons / Roles</span>
+              <span>{gl.steps[2]}</span>
             </h3>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Date or Approximate Time Period *
+                {gl.dateLabel}
               </label>
               <input
                 id="input-grievance-period"
                 type="text"
                 value={grievanceData.dateOrPeriod}
                 onChange={(e) => setGrievanceData({ ...grievanceData, dateOrPeriod: e.target.value })}
-                placeholder="e.g. 15th September 2026 or past 2 weeks"
+                placeholder={gl.datePlaceholder}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                People or Roles Involved (Optional)
+                {gl.peopleLabel}
               </label>
               <input
                 id="input-grievance-people"
                 type="text"
                 value={grievanceData.peopleOrRoleInvolved || ''}
                 onChange={(e) => setGrievanceData({ ...grievanceData, peopleOrRoleInvolved: e.target.value })}
-                placeholder="e.g. Secretary, Returning Officer, Managing Committee President"
+                placeholder={gl.peoplePlaceholder}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Supporting Proof / Documents Available (Optional)
+                {gl.proofLabel}
               </label>
               <input
                 id="input-grievance-proof"
                 type="text"
                 value={grievanceData.relevantDocsDetails || ''}
                 onChange={(e) => setGrievanceData({ ...grievanceData, relevantDocsDetails: e.target.value })}
-                placeholder="e.g. Milk delivery passbook receipts, membership share certificate copy"
+                placeholder={gl.proofPlaceholder}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
@@ -343,15 +488,12 @@ export const GrievanceFlow: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Shield className="w-5 h-5 text-amber-600" />
-              <span>Step 4: Desired Relief & Prayer</span>
+              <span>{gl.steps[3]}</span>
             </h3>
-            <p className="text-xs text-slate-500">
-              Specify the concrete action you are demanding from the managing committee or the Registrar.
-            </p>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Desired Resolution / Specific Relief *
+                {gl.reliefLabel}
               </label>
               <textarea
                 id="input-grievance-resolution"
@@ -359,21 +501,21 @@ export const GrievanceFlow: React.FC = () => {
                 required
                 value={grievanceData.desiredResolution}
                 onChange={(e) => setGrievanceData({ ...grievanceData, desiredResolution: e.target.value })}
-                placeholder="e.g. Immediate restoration of my name in final voter list before polling date and disciplinary inquiry into omission..."
+                placeholder={gl.reliefPlaceholder}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 leading-relaxed"
               />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Additional Notes / Instructions (Optional)
+                {gl.notesLabel}
               </label>
               <input
                 id="input-grievance-notes"
                 type="text"
                 value={grievanceData.additionalNotes || ''}
                 onChange={(e) => setGrievanceData({ ...grievanceData, additionalNotes: e.target.value })}
-                placeholder="e.g. Request urgent hearing within 7 days due to impending election"
+                placeholder={gl.notesPlaceholder}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
@@ -386,13 +528,13 @@ export const GrievanceFlow: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                <span>Step 5: Review Grievance & Retrieved Statutory Bylaws</span>
+                <span>{gl.steps[4]}</span>
               </h3>
               <button
                 onClick={() => setCurrentStep(1)}
                 className="text-xs text-amber-700 hover:text-amber-800 font-bold underline"
               >
-                Edit Details
+                {gl.editDetails}
               </button>
             </div>
 
@@ -401,11 +543,11 @@ export const GrievanceFlow: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <span className="text-slate-400 block font-medium">Complainant:</span>
-                  <span className="font-bold text-slate-900">{grievanceData.memberName}</span>
+                  <span className="font-bold text-slate-900">{grievanceData.memberName || profile?.name}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block font-medium">Society:</span>
-                  <span className="font-bold text-slate-900">{grievanceData.societyName}</span>
+                  <span className="font-bold text-slate-900">{grievanceData.societyName || profile?.society}</span>
                 </div>
               </div>
 
@@ -436,10 +578,7 @@ export const GrievanceFlow: React.FC = () => {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <BookOpen className="w-4 h-4 text-emerald-600" />
-                  Relevant Cooperative Bylaws Retrieved via RAG ({retrievedSources.length}):
-                </span>
-                <span className="text-[10px] text-slate-500 font-mono">
-                  Grounding Citations
+                  {gl.relevantBylaws} ({retrievedSources.length}):
                 </span>
               </div>
 
@@ -465,7 +604,7 @@ export const GrievanceFlow: React.FC = () => {
                       onClick={() => setSelectedSource(src)}
                       className="text-xs text-emerald-700 hover:text-emerald-900 font-bold underline shrink-0"
                     >
-                      Inspect
+                      {gl.inspect}
                     </button>
                   </div>
                 ))}
@@ -484,7 +623,7 @@ export const GrievanceFlow: React.FC = () => {
             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{t.backBtn}</span>
+            <span>{t?.backBtn || 'Back'}</span>
           </button>
 
           {currentStep < 4 && (
@@ -494,7 +633,7 @@ export const GrievanceFlow: React.FC = () => {
               onClick={() => setCurrentStep(prev => prev + 1)}
               className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
             >
-              <span>{t.continueBtn}</span>
+              <span>{t?.continueBtn || 'Continue'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
@@ -506,7 +645,7 @@ export const GrievanceFlow: React.FC = () => {
               onClick={handleProceedToStep5}
               className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
             >
-              <span>Review & Retrieve Bylaws</span>
+              <span>{gl.reviewBylawsBtn}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
@@ -520,7 +659,7 @@ export const GrievanceFlow: React.FC = () => {
               className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-emerald-900/20"
             >
               <Sparkles className="w-4 h-4" />
-              <span>{isGenerating ? 'Generating Official Letter...' : 'Generate Grievance Letter'}</span>
+              <span>{isGenerating ? gl.generatingBtn : gl.generateBtn}</span>
             </button>
           )}
         </div>

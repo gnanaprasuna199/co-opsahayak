@@ -34,7 +34,7 @@ interface AppContextType {
 }
 
 const DEFAULT_PROFILE: UserProfile = {
-  name: 'Ravi',
+  name: 'Gnana Prasuna',
   role: 'Member',
   state: 'Telangana',
   societyName: 'Demo Dairy Cooperative Society',
@@ -93,7 +93,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
   const [chatStatus, setChatStatus] = useState<string>('');
-
+  
  // Workflow states - dynamically derived from profile
   const [grievanceData, setGrievanceData] = useState<GrievanceFormData>(() => ({
     memberName: profile.name || 'Member',

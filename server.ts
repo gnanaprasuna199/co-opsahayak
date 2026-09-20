@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { exec } from 'child_process';
+
 dotenv.config();
 console.log('Gemini Key Detected:', !!process.env.GEMINI_API_KEY);
 import express from 'express';
@@ -483,17 +483,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, () => {
-    const url = `http://localhost:${PORT}`;
-    console.log(`Co-opSahayak Server running on ${url}`);
-
-    // Automatically open Chrome on Windows
-    exec(`start chrome ${url}`, (err) => {
-      if (err) {
-        // Fallback to default browser if Chrome alias isn't in PATH
-        exec(`start ${url}`);
-      }
-    });
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Co-opSahayak Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

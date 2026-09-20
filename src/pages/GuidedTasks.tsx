@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getTaskTranslations } from '../data/taskTranslations';
 import {
   ListTodo,
   CheckCircle2,
@@ -20,10 +21,8 @@ import { defaultRagEngine } from '../services/ragService';
 
 interface TaskDef {
   id: string;
-  title: string;
-  category: string;
+  translationKey: 'voting' | 'elections' | 'registration' | 'membership';
   icon: any;
-  description: string;
   estimatedMinutes: number;
   steps: {
     title: string;
@@ -39,11 +38,9 @@ interface TaskDef {
 const TASKS: TaskDef[] = [
   {
     id: 'voting-rights-check',
-    title: 'Check Voting Rights Eligibility',
-    category: 'Elections & Governance',
+    translationKey: 'voting',
     icon: Vote,
     estimatedMinutes: 3,
-    description: 'Verify if you meet all statutory requirements under cooperative bylaws to cast your vote in upcoming elections.',
     steps: [
       {
         title: 'Membership Duration & Admission Date',
@@ -97,11 +94,9 @@ const TASKS: TaskDef[] = [
   },
   {
     id: 'election-procedure-guide',
-    title: 'Understand Election Procedure & Objections',
-    category: 'Electoral Rules',
+    translationKey: 'elections',
     icon: ShieldAlert,
     estimatedMinutes: 5,
-    description: 'Walk through key election timelines: voter rolls, filing objections, nomination scrutiny, secret ballot, and Returning Officer duties.',
     steps: [
       {
         title: 'Step 1: Electoral Roll Publication & Objections',
@@ -141,11 +136,9 @@ const TASKS: TaskDef[] = [
   },
   {
     id: 'coop-registration-steps',
-    title: 'Learn Cooperative Registration Steps',
-    category: 'Formation & Society Setup',
+    translationKey: 'registration',
     icon: Building,
     estimatedMinutes: 6,
-    description: 'Step-by-step procedural manual for organizing and registering a new primary cooperative society under state regulations.',
     steps: [
       {
         title: 'Minimum Member Threshold (10 Individuals)',
@@ -198,11 +191,9 @@ const TASKS: TaskDef[] = [
   },
   {
     id: 'membership-procedure',
-    title: 'Understand Membership Admission & Rights',
-    category: 'Membership',
+    translationKey: 'membership',
     icon: UserCheck,
     estimatedMinutes: 4,
-    description: 'Learn criteria for becoming a cooperative member, application timelines, share certificates, and appeal rights if rejected.',
     steps: [
       {
         title: 'Eligibility Verification',
@@ -232,7 +223,13 @@ const TASKS: TaskDef[] = [
 ];
 
 export const GuidedTasks: React.FC = () => {
-  const { setActiveTab, setSelectedSource, t } = useApp();
+  const appCtx = useApp() as any;
+  const { setActiveTab, setSelectedSource, t } = appCtx;
+
+  // Accurately capture current language whether stored as language or selectedLanguage
+  const currentLang = appCtx.language || appCtx.selectedLanguage || 'en';
+  const taskLocale = getTaskTranslations(currentLang);
+
   const [activeTask, setActiveTask] = useState<TaskDef | null>(null);
   const [currentStepIdx, setCurrentStepIdx] = useState<number>(0);
   const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
@@ -278,7 +275,7 @@ export const GuidedTasks: React.FC = () => {
             <span>{t.guidedCardTitle}</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Complete common cooperative procedures through structured, stateful workflows.
+            {taskLocale.subtitle}
           </p>
         </div>
 
@@ -289,7 +286,7 @@ export const GuidedTasks: React.FC = () => {
           className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-2 shrink-0 transition-all"
         >
           <FileText className="w-4 h-4" />
-          <span>Launch Grievance Letter Wizard</span>
+          <span>{taskLocale.launchGrievance}</span>
         </button>
       </div>
 
@@ -297,51 +294,54 @@ export const GuidedTasks: React.FC = () => {
       {!activeTask ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {TASKS.map((task) => {
-            const Icon = task.icon;
-            return (
-              <div
-                key={task.id}
-                id={`task-card-${task.id}`}
-                className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-full">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      {task.estimatedMinutes} mins
-                    </span>
-                  </div>
+  const Icon = task.icon;
+  // Safely fallback to the key or the default English voting entry
+  const taskData = taskLocale.tasks[task.translationKey] || taskLocale.tasks['voting'];
 
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block mb-1">
-                    {task.category}
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 mb-1.5">
-                    {task.title}
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {task.description}
-                  </p>
-                </div>
+  return (
+    <div
+      key={task.id}
+      id={`task-card-${task.id}`}
+      className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between"
+    >
+      <div>
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            <Icon className="w-5 h-5" />
+          </div>
+          <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-full">
+            <Clock className="w-3 h-3 text-slate-400" />
+            {task.estimatedMinutes} {taskLocale.mins}
+          </span>
+        </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-slate-400 font-medium">
-                    {task.steps.length} Steps
-                  </span>
-                  <button
-                    id={`btn-start-task-${task.id}`}
-                    onClick={() => startTask(task)}
-                    className="px-4 py-1.5 bg-slate-900 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1"
-                  >
-                    <span>Start Task</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block mb-1">
+          {taskData?.category}
+        </span>
+        <h3 className="text-base font-bold text-slate-900 mb-1.5">
+          {taskData?.title}
+        </h3>
+        <p className="text-xs text-slate-600 leading-relaxed">
+          {taskData?.desc}
+        </p>
+      </div>
+
+      <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+        <span className="text-xs text-slate-400 font-medium">
+          {task.steps.length} {taskLocale.steps}
+        </span>
+        <button
+          id={`btn-start-task-${task.id}`}
+          onClick={() => startTask(task)}
+          className="px-4 py-1.5 bg-slate-900 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+        >
+          <span>{taskLocale.startTask}</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+})}
         </div>
       ) : (
         /* Active Workflow Step-by-Step UI */
@@ -350,7 +350,7 @@ export const GuidedTasks: React.FC = () => {
           <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
             <div>
               <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block">
-                {activeTask.title}
+                {taskLocale.tasks[activeTask.translationKey]?.title}
               </span>
               <h3 className="text-base font-bold text-slate-900 mt-0.5">
                 {!taskCompleted
@@ -465,7 +465,7 @@ export const GuidedTasks: React.FC = () => {
                       Workflow Completed Successfully
                     </h4>
                     <p className="text-xs text-emerald-800 mt-1">
-                      Based on your responses, you have reviewed the key statutory requirements for {activeTask.title}.
+                      Based on your responses, you have reviewed the key statutory requirements for {taskLocale.tasks[activeTask.translationKey]?.title}.
                     </p>
                   </div>
                 </div>
