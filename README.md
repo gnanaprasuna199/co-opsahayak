@@ -19,7 +19,7 @@ Co-opSahayak empowers Indian cooperative society members (dairy producers, agric
 
 - **Frontend**: React 19, TypeScript, Tailwind CSS, Lucide Icons, Framer Motion
 - **Backend**: Node.js, Express, Vite SSR middleware
-- **AI & RAG**: Google GenAI SDK (`gemini-2.5-flash` / `gemini-3.8-flash`), Custom Lexical/Vector RAG Engine
+- **AI & RAG**: Google GenAI SDK (`gemini-2.5-flash` / `gemini-3.8-flash`)
 - **Document Export**: jsPDF with custom canvas typography rendering
 
 ---
